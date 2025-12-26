@@ -4,6 +4,7 @@ from typing import List
 import models
 import schemas
 from database import get_db, engine
+from breed_validator import validate_breed, get_breed_names
 
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
@@ -25,7 +26,18 @@ def health_check():
 
 @app.post("/cats/", response_model=schemas.CatResponse, status_code=status.HTTP_201_CREATED)
 def create_cat(cat: schemas.CatCreate, db: Session = Depends(get_db)):
-    """Create a new cat"""
+    """Create a new cat. Breed must be validated against the Cat API."""
+    # Validate breed against Cat API
+    if not validate_breed(cat.breed):
+        valid_breeds = get_breed_names()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": f"Invalid breed: '{cat.breed}'. Breed must be one of the valid breeds from the Cat API.",
+                "valid_breeds": valid_breeds[:20] if len(valid_breeds) > 20 else valid_breeds  
+            }
+        )
+    
     db_cat = models.Cat(**cat.model_dump())
     db.add(db_cat)
     db.commit()
