@@ -41,12 +41,16 @@ class TargetResponse(TargetBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-class MissionBase(BaseModel):
-    cat_id: int
-    target_ids: List[int] = Field(..., min_length=1, max_length=3)
-    complete_state: bool = False
+class TargetInMission(BaseModel):
+    name: str
+    country: str
+    notes: str = ""
+
+
+class MissionCreate(BaseModel):
+    targets: List[TargetInMission] = Field(..., min_length=1, max_length=3)
     
-    @field_validator('target_ids')
+    @field_validator('targets')
     @classmethod
     def validate_target_count(cls, v):
         if len(v) < 1 or len(v) > 3:
@@ -54,18 +58,29 @@ class MissionBase(BaseModel):
         return v
 
 
-class MissionCreate(MissionBase):
-    pass
+class MissionAssignCat(BaseModel):
+    cat_id: int
 
 
-class MissionUpdate(BaseModel):
-    complete_state: Optional[bool] = None
+class MissionUpdateTargets(BaseModel):
+    targets: List[TargetInMission] = Field(..., min_length=1, max_length=3)
+    
+    @field_validator('targets')
+    @classmethod
+    def validate_target_count(cls, v):
+        if len(v) < 1 or len(v) > 3:
+            raise ValueError('Mission must have between 1 and 3 targets')
+        return v
+
+
+class MissionUpdateNotes(BaseModel):
+    notes: str
 
 
 class MissionResponse(BaseModel):
     id: int
-    cat_id: int
-    target_ids: List[int]
+    cat_id: Optional[int]
+    targets: List[TargetResponse]
     complete_state: bool
     
     model_config = ConfigDict(from_attributes=True)
@@ -76,7 +91,7 @@ class MissionResponse(BaseModel):
         return cls(
             id=mission.id,
             cat_id=mission.cat_id,
-            target_ids=[target.id for target in mission.targets],
+            targets=[TargetResponse.model_validate(target) for target in mission.targets],
             complete_state=mission.complete_state
         )
 
