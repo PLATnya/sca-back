@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List
 import uvicorn
@@ -6,12 +7,31 @@ import models
 import schemas
 from database import get_db, engine
 from breed_validator import validate_breed, get_breed_names
-
+from config import settings
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="SCA Backend API"
+)
+
+# Configure CORS
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+
+if settings.frontend_url and settings.frontend_url not in origins:
+    origins.append(settings.frontend_url)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 

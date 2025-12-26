@@ -85,6 +85,9 @@ pip install -r requirements.txt
 Create a `.env` file:
 
 ```bash
+# Frontend URL
+FRONTEND_URL=http://localhost:3000
+
 # Database Configuration
 POSTGRES_USER=sca_user
 POSTGRES_PASSWORD=sca_password
